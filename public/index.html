@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Books Catalog</title>
+  <style>
+    /* CSS */
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 { color: #b220eb; }
+    h2 { text-align: center; color: #333; margin-top: 30px;}
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.3s;
+      margin: 10px 0;
+    }
+
+    button:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    button.cancel-btn {
+      background-color: #888;
+      margin-left: 10px;
+    }
+
+    button.cancel-btn:hover { background-color: #666; }
+
+    #booksDisplay p {
+      background: rgb(234, 240, 212);
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .form-section {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    .form-group textarea { height: 80px; resize: vertical; }
+
+    .msg {
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-size: 15px;
+    }
+
+    .msg.success { background: #e4f7e9; color: #2e7d32; }
+    .msg.error   { background: #f7e1de; color: #c62828; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Books Catalogue developed by s225179083</h1>
+  <p>Click the button below to get all books from the server:</p>
+
+  <button id="fetchBooksBtn">Get Books</button>
+  <div id="booksDisplay"></div>
+
+  <!-- create form -->
+  <div class="form-section">
+    <h2 >Add New Book</h2>
+    <div id="createMsg"></div>
+    <!-- ID -->
+    <div class="form-group">
+      <label>ID (format: b1, b2, b100)</label>
+      <input type="text" id="create-id" placeholder="e.g. b6">
+    </div>
+    <!-- Title -->
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="create-title" placeholder="Book title">
+    </div>
+    <!-- Author -->
+    <div class="form-group">
+      <label>Author</label>
+      <input type="text" id="create-author" placeholder="Author name">
+    </div>
+    <!-- year -->
+    <div class="form-group">
+      <label>Year</label>
+      <input type="number" id="create-year" placeholder="e.g. 2020">
+    </div>
+    <!-- genre -->
+    <div class="form-group">
+      <label>Genre</label>
+      <select id="create-genre">
+        <option value="">-- Select Genre --</option>
+        <option>Fiction</option>
+        <option>Non-Fiction</option>
+        <option>Classic</option>
+        <option>Science Fiction</option>
+        <option>Fantasy</option>
+        <option>Historical Fiction</option>
+        <option>Mystery</option>
+        <option>Biography</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <!-- summary -->
+    <div class="form-group">
+      <label>Summary</label>
+      <textarea id="create-summary" placeholder="At least 20 characters..."></textarea>
+    </div>
+    <!-- price -->
+    <div class="form-group">
+      <label>Price (AUD)</label>
+      <input type="number" step="0.01" id="create-price" placeholder="e.g. 29.99">
+    </div>
+    <button id="createBtn">Create Book</button>
+  </div>
+
+  <!-- edit FORM -->
+  <div class="form-section hidden" id="editSection">
+    <h2>Edit Book</h2>
+    <div id="editMsg"></div>
+    <p id="editingLabel" style="color:#555; font-style:italic;"></p>
+    <!-- title -->
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="edit-title">
+    </div>
+    <!-- author -->
+    <div class="form-group">
+      <label>Author</label>
+      <input type="text" id="edit-author">
+    </div>
+    <!-- year -->
+    <div class="form-group">
+      <label>Year</label>
+      <input type="number" id="edit-year">
+    </div>
+    <!-- genre -->
+    <div class="form-group">
+      <label>Genre</label>
+      <select id="edit-genre">
+        <option value="">-- Select Genre --</option>
+        <option>Fiction</option>
+        <option>Non-Fiction</option>
+        <option>Classic</option>
+        <option>Science Fiction</option>
+        <option>Fantasy</option>
+        <option>Historical Fiction</option>
+        <option>Mystery</option>
+        <option>Biography</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <!-- summary -->
+    <div class="form-group">
+      <label>Summary</label>
+      <textarea id="edit-summary"></textarea>
+    </div>
+    <!-- price -->
+    <div class="form-group">
+      <label>Price (AUD)</label>
+      <input type="number" step="0.01" id="edit-price">
+    </div>
+    <button id="updateBtn">Update Book</button>
+    <button class="cancel-btn" id="cancelEditBtn">Cancel</button>
+  </div>
+
+  <script>
+    const btn = document.getElementById('fetchBooksBtn');
+    const out = document.getElementById('booksDisplay');
+    let currentEditId = null;
+
+    // success / unsuccess msg
+    function showMsg(containerId, text, type) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = `<div class="msg ${type}">${text}</div>`;
+      setTimeout(() => el.innerHTML = '', 8000);
+    }
+
+    // render the book list
+    function render(items) {
+      out.innerHTML = '';
+      if (!Array.isArray(items) || items.length === 0) {
+        out.textContent = 'No books found';
+        return;
+      }
+      for (const book of items) {
+        const price =
+          typeof book.price === 'string'
+            ? book.price
+            : book.price?.$numberDecimal || book.price || '';
+
+        const p = document.createElement('p');
+        p.textContent = `${book.title} by ${book.author} - ${book.genre} - AUD ${price}`;
+        p.style.cursor = 'pointer';
+        p.style.color = 'blue';
+        p.addEventListener('click', async () => {
+          await loadBookDetails(book.id);
+        });
+        out.appendChild(p);
+      }
+    }
+
+    // load each book details
+    async function loadBookDetails(id) {
+      try {
+        out.textContent = 'Loading book details...';
+        const res = await fetch(`/api/books/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+        const book = body.data;
+        const price = book.price?.$numberDecimal || book.price;
+
+        out.innerHTML = `
+          <h3>${book.title}</h3>
+          <p><b>Author:</b> ${book.author}</p>
+          <p><b>Year:</b> ${book.year}</p>
+          <p><b>Genre:</b> ${book.genre}</p>
+          <p><b>Summary:</b> ${book.summary}</p>
+          <p><b>Price:</b> AUD ${price}</p>
+          <button onclick="loadEditForm('${book.id}')">Edit</button>
+          <button class="cancel-btn" onclick="location.reload()">Back</button>
+        `;
+      } catch (err) {
+        console.error(err);
+        out.textContent = 'Error loading book details.';
+      }
+    }
+
+    // load edit form with pre filled data
+    async function loadEditForm(id) {
+      try {
+        const res = await fetch(`/api/books/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+        const book = body.data;
+        const price = book.price?.$numberDecimal || book.price;
+
+        currentEditId = id;
+        document.getElementById('editingLabel').textContent = `Editing: ${book.title} (id: ${id})`;
+        document.getElementById('edit-title').value   = book.title;
+        document.getElementById('edit-author').value  = book.author;
+        document.getElementById('edit-year').value    = book.year;
+        document.getElementById('edit-genre').value   = book.genre;
+        document.getElementById('edit-summary').value = book.summary;
+        document.getElementById('edit-price').value   = price;
+
+        document.getElementById('editSection').classList.remove('hidden');
+        document.getElementById('editSection').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        console.error(err);
+        alert('Could not load book for editing.');
+      }
+    }
+
+    // get all books
+    btn.addEventListener('click', async () => {
+      out.textContent = 'Loading...';
+      try {
+        const res = await fetch('/api/books');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+        render(body.data);
+      } catch (err) {
+        console.error('Error fetching books:', err);
+        out.textContent = 'Error fetching books.';
+      }
+    });
+
+    // create a new book
+    document.getElementById('createBtn').addEventListener('click', async () => {
+      const payload = {
+        id:      document.getElementById('create-id').value.trim(),
+        title:   document.getElementById('create-title').value.trim(),
+        author:  document.getElementById('create-author').value.trim(),
+        year:    parseInt(document.getElementById('create-year').value),
+        genre:   document.getElementById('create-genre').value,
+        summary: document.getElementById('create-summary').value.trim(),
+        price:   document.getElementById('create-price').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/books', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await res.json();
+
+        if (res.status === 201) {
+          showMsg('createMsg', `Book "${body.data.title}" created successfully!`, 'success');
+          // clear form after success
+          ['create-id','create-title','create-author','create-year',
+           'create-genre','create-summary','create-price'].forEach(id => {
+            document.getElementById(id).value = '';
+          });
+        } else {
+          showMsg('createMsg', `Error: ${body.message}`, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showMsg('createMsg', 'Network error. Please try again.', 'error');
+      }
+    });
+
+    // update existing book
+    document.getElementById('updateBtn').addEventListener('click', async () => {
+      if (!currentEditId) return;
+
+      const payload = {
+        title:   document.getElementById('edit-title').value.trim(),
+        author:  document.getElementById('edit-author').value.trim(),
+        year:    parseInt(document.getElementById('edit-year').value),
+        genre:   document.getElementById('edit-genre').value,
+        summary: document.getElementById('edit-summary').value.trim(),
+        price:   document.getElementById('edit-price').value.trim()
+      };
+
+      try {
+        const res = await fetch(`/api/books/${currentEditId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await res.json();
+
+        if (res.status === 200) {
+          showMsg('editMsg', `Book updated successfully!`, 'success');
+          setTimeout(() => {
+          document.getElementById('editSection').classList.add('hidden');
+          currentEditId = null;
+        } , 8000);
+        } else {
+          showMsg('editMsg', `Error: ${body.message}`, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showMsg('editMsg', 'Network error. Please try again.', 'error');
+      }
+    });
+
+    // cancel edit option
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    document.getElementById('editSection').classList.add('hidden');
+    currentEditId = null;
+    });
+  </script>
+
+</body>
+</html>
