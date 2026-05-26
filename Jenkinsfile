@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG = "build-${BUILD_NUMBER}"
         CONTAINER_NAME = "books-catalog-staging"
         PROD_CONTAINER = "books-catalog-prod"
+        DOCKER = "/usr/local/bin/docker"
     }
 
     stages {
@@ -13,8 +14,8 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker image...'
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-                sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+                sh '${DOCKER} build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh '${DOCKER} tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
                 echo "Built image: ${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
@@ -25,17 +26,11 @@ pipeline {
                 sh 'npm install'
                 sh 'npm test'
             }
-            post {
-                always {
-                    echo 'Test stage complete.'
-                }
-            }
         }
 
         stage('Code Quality') {
             steps {
-                echo 'Running code quality analysis with npm audit and lint check...'
-                sh 'npm install'
+                echo 'Running code quality analysis...'
                 sh '''
                     echo "=== Dependency Audit ==="
                     npm audit --audit-level=high || true
@@ -67,9 +62,9 @@ pipeline {
             steps {
                 echo 'Deploying to staging environment...'
                 sh '''
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
-                    docker run -d \
+                    ${DOCKER} stop ${CONTAINER_NAME} || true
+                    ${DOCKER} rm ${CONTAINER_NAME} || true
+                    ${DOCKER} run -d \
                         --name ${CONTAINER_NAME} \
                         -p 3001:3000 \
                         -e NODE_ENV=staging \
@@ -77,7 +72,7 @@ pipeline {
                         ${IMAGE_NAME}:${IMAGE_TAG}
                     echo "Staging container started on port 3001"
                     sleep 5
-                    docker ps | grep ${CONTAINER_NAME}
+                    ${DOCKER} ps | grep ${CONTAINER_NAME}
                 '''
             }
         }
@@ -86,10 +81,10 @@ pipeline {
             steps {
                 echo 'Promoting to production...'
                 sh '''
-                    docker stop ${PROD_CONTAINER} || true
-                    docker rm ${PROD_CONTAINER} || true
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:production
-                    docker run -d \
+                    ${DOCKER} stop ${PROD_CONTAINER} || true
+                    ${DOCKER} rm ${PROD_CONTAINER} || true
+                    ${DOCKER} tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:production
+                    ${DOCKER} run -d \
                         --name ${PROD_CONTAINER} \
                         -p 3002:3000 \
                         -e NODE_ENV=production \
@@ -97,7 +92,7 @@ pipeline {
                         ${IMAGE_NAME}:production
                     echo "Production container started on port 3002"
                     sleep 5
-                    docker ps | grep ${PROD_CONTAINER}
+                    ${DOCKER} ps | grep ${PROD_CONTAINER}
                 '''
             }
         }
@@ -114,14 +109,14 @@ pipeline {
                     curl -f http://localhost:3002/ || echo "Production health check failed"
 
                     echo "=== Container Resource Usage ==="
-                    docker stats --no-stream ${CONTAINER_NAME} || true
-                    docker stats --no-stream ${PROD_CONTAINER} || true
+                    ${DOCKER} stats --no-stream ${CONTAINER_NAME} || true
+                    ${DOCKER} stats --no-stream ${PROD_CONTAINER} || true
 
                     echo "=== Staging Logs (last 20 lines) ==="
-                    docker logs --tail 20 ${CONTAINER_NAME} || true
+                    ${DOCKER} logs --tail 20 ${CONTAINER_NAME} || true
 
                     echo "=== Production Logs (last 20 lines) ==="
-                    docker logs --tail 20 ${PROD_CONTAINER} || true
+                    ${DOCKER} logs --tail 20 ${PROD_CONTAINER} || true
                 '''
             }
         }
