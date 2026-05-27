@@ -7,8 +7,8 @@ pipeline {
         CONTAINER_NAME = "books-catalog-staging"
         PROD_CONTAINER = "books-catalog-prod"
         DOCKER = "/usr/local/bin/docker"
-        NPM = "/opt/homebrew/bin/npm"
-        NODE = "/opt/homebrew/bin/node"
+        NPM = "/usr/local/bin/npm"
+        NODE = "/usr/local/bin/node"
     }
 
     stages {
