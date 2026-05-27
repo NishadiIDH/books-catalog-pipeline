@@ -9,6 +9,7 @@ pipeline {
         DOCKER = "/usr/local/bin/docker"
         NPM = "/usr/local/bin/npm"
         NODE = "/usr/local/bin/node"
+        SONAR_SCANNER = "/opt/homebrew/bin/sonar-scanner"
     }
 
     stages {
@@ -32,13 +33,19 @@ pipeline {
 
         stage('Code Quality') {
             steps {
-                echo 'Running code quality analysis...'
-                sh '''
-                    echo "=== Dependency Audit ==="
-                    ${NPM} audit --audit-level=high || true
-                    echo "=== Package Stats ==="
-                    ${NPM} list --depth=0 || true
-                '''
+                echo 'Running SonarQube code quality analysis...'
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        ${SONAR_SCANNER} \
+                            -Dsonar.projectKey=books-catalog \
+                            -Dsonar.projectName="Books Catalog API" \
+                            -Dsonar.sources=. \
+                            -Dsonar.exclusions=node_modules/**,coverage/**,__tests__/** \
+                            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                            -Dsonar.host.url=http://localhost:9000 \
+                            -Dsonar.login=${SONAR_TOKEN}
+                    '''
+                }
             }
         }
 
