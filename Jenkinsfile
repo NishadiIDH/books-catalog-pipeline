@@ -7,6 +7,8 @@ pipeline {
         CONTAINER_NAME = "books-catalog-staging"
         PROD_CONTAINER = "books-catalog-prod"
         DOCKER = "/usr/local/bin/docker"
+        NPM = "/opt/homebrew/bin/npm"
+        NODE = "/opt/homebrew/bin/node"
     }
 
     stages {
@@ -23,8 +25,8 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running Jest unit tests...'
-                sh 'npm install'
-                sh 'npm test'
+                sh '${NPM} install'
+                sh '${NPM} test'
             }
         }
 
@@ -33,9 +35,9 @@ pipeline {
                 echo 'Running code quality analysis...'
                 sh '''
                     echo "=== Dependency Audit ==="
-                    npm audit --audit-level=high || true
+                    ${NPM} audit --audit-level=high || true
                     echo "=== Package Stats ==="
-                    npm list --depth=0 || true
+                    ${NPM} list --depth=0 || true
                 '''
             }
         }
@@ -45,8 +47,8 @@ pipeline {
                 echo 'Running security vulnerability scan...'
                 sh '''
                     echo "=== NPM Security Audit ==="
-                    npm audit --json > audit-report.json || true
-                    npm audit || true
+                    ${NPM} audit --json > audit-report.json || true
+                    ${NPM} audit || true
                     echo "=== Checking for known vulnerabilities ==="
                     cat audit-report.json | grep -o '"severity":"[^"]*"' | sort | uniq -c || true
                 '''
